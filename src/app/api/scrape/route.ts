@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { chromium } from "playwright";
+
+export const maxDuration = 60; // Allow more time on Vercel Pro if available
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -9,23 +10,40 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Missing target URL" }, { status: 400 });
   }
 
+  let browser;
   try {
-    const browser = await chromium.launch({
-      headless: true,
-      // For Vercel/serverless environments, this might fail without playwright-core and external browser.
-      // But for local MVP, this standard launch is fine.
-    });
+    const isLocal = !!process.env.NEXT_PUBLIC_IS_LOCAL || process.env.NODE_ENV === "development";
+
+    if (isLocal) {
+      // Use standard playwright for local development
+      const { chromium } = require("playwright");
+      browser = await chromium.launch({
+        headless: true,
+      });
+    } else {
+      // Use playwright-core and sparticuz for Vercel serverless deployment
+      const { chromium: playwrightCore } = require("playwright-core");
+      const sparticuz = require("@sparticuz/chromium-min");
+      
+      const executablePath = await sparticuz.executablePath(
+        "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
+      );
+
+      browser = await playwrightCore.launch({
+        args: sparticuz.args,
+        executablePath: executablePath,
+        headless: sparticuz.headless,
+      });
+    }
     
     const context = await browser.newContext({
       viewport: { width: 1280, height: 800 }
     });
     const page = await context.newPage();
     
-    await page.goto(targetUrl, { waitUntil: 'networkidle' });
+    await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
 
     // Extract computed styles for a set of nodes
-    // In a real app we'd map Figma layers to DOM nodes (e.g. via attributes or AI).
-    // For the MVP, we just scrape the structure of the body or main element.
     const computedStyles = await page.evaluate(() => {
       const results: any[] = [];
       const walker = document.createTreeWalker(
@@ -83,6 +101,7 @@ export async function GET(request: Request) {
     });
 
   } catch (error: any) {
+    if (browser) await browser.close();
     console.error("Playwright error:", error);
     return NextResponse.json({ error: error.message || "Failed to scrape live site" }, { status: 500 });
   }

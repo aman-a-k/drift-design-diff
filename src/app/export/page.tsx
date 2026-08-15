@@ -1,21 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Printer } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { generateReport, Mismatch } from "@/lib/compare";
 
-export default function ExportScreen() {
+function ExportContent() {
   const searchParams = useSearchParams();
   const figmaUrl = searchParams.get("figma") || "";
   const liveUrl = searchParams.get("live") || "";
   const [report, setReport] = useState<Mismatch[]>([]);
 
   useEffect(() => {
-    // For the MVP export screen, we just mock the fetch or reuse the mock engine
-    // In a real app we'd use React Context or refetch
     setReport(generateReport({}, {})); 
   }, []);
 
@@ -77,5 +75,13 @@ export default function ExportScreen() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ExportScreen() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-surface p-8">Loading checklist...</div>}>
+      <ExportContent />
+    </Suspense>
   );
 }

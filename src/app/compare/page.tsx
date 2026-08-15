@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Layers, SplitSquareHorizontal, Download } from "lucide-react";
 import Link from "next/link";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { generateReport, Mismatch } from "@/lib/compare";
 
-export default function CompareScreen() {
+function CompareContent() {
   const searchParams = useSearchParams();
   const figmaUrl = searchParams.get("figma") || "";
   const liveUrl = searchParams.get("live") || "";
@@ -21,7 +21,6 @@ export default function CompareScreen() {
   useEffect(() => {
     async function runFidelityCheck() {
       try {
-        // Trigger both API routes in parallel
         const [figmaRes, scrapeRes] = await Promise.all([
           fetch(`/api/figma?url=${encodeURIComponent(figmaUrl)}`),
           fetch(`/api/scrape?url=${encodeURIComponent(liveUrl)}`)
@@ -30,8 +29,6 @@ export default function CompareScreen() {
         const figmaData = await figmaRes.json();
         const scrapeData = await scrapeRes.json();
 
-        // If figma fails due to no token, we still want to show the mock report for the demo
-        // In reality we would throw an error here.
         if (!figmaData.success && !figmaData.error?.includes("token")) {
            console.warn("Figma API error:", figmaData.error);
         }
@@ -182,5 +179,13 @@ export default function CompareScreen() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function CompareScreen() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading comparison...</div>}>
+      <CompareContent />
+    </Suspense>
   );
 }
