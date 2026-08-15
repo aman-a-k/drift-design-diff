@@ -1,26 +1,55 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
+@theme {
+  /* Minimal, flat design system */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+
+  /* Severity colors */
+  --color-severity-high: #ef4444;    /* red-500 */
+  --color-severity-med: #f59e0b;     /* amber-500 */
+  --color-severity-low: #22c55e;     /* green-500 */
+
+  /* Surface */
+  --color-surface: var(--surface);
+  
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+:root {
+  --background: #fdfdfd;
+  --foreground: #171717;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --border: #e4e4e7;
+  --surface: #ffffff;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #09090b;
+    --foreground: #fafafa;
+    --muted: #27272a;
+    --muted-foreground: #a1a1aa;
+    --border: #27272a;
+    --surface: #18181b;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  /* Ensure a completely flat look globally */
+  box-shadow: none !important;
+}
+
+/* Reset some default outlines for a sharper flat feel */
+*:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 2px;
 }
