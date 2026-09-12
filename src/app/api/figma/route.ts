@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     // colons ("123:456") — convert so lookups below actually match.
     const rawNodeId = urlObj.searchParams.get("node-id") || "";
     nodeId = rawNodeId.replace(/-/g, ":");
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Invalid Figma URL format" }, { status: 400 });
   }
 
@@ -70,8 +70,9 @@ export async function GET(request: Request) {
       data: nodeId ? data.nodes[nodeId].document : data.document
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Figma API error:", error);
-    return NextResponse.json({ error: error.message || "Failed to fetch Figma data" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to fetch Figma data";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

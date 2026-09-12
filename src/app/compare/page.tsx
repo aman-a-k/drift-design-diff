@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Layers, SplitSquareHorizontal, Download } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateReport, Mismatch } from "@/lib/compare";
 
 function CompareContent() {
@@ -13,12 +13,17 @@ function CompareContent() {
   const figmaUrl = searchParams.get("figma") || "";
   const liveUrl = searchParams.get("live") || "";
 
+  const hasUrls = Boolean(figmaUrl && liveUrl);
+
   const [viewMode, setViewMode] = useState<"side-by-side" | "overlay">("side-by-side");
   const [report, setReport] = useState<Mismatch[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(hasUrls);
+  const [fetchError, setFetchError] = useState("");
+  const error = hasUrls ? fetchError : "Missing URLs for comparison.";
 
   useEffect(() => {
+    if (!hasUrls) return;
+
     async function runFidelityCheck() {
       try {
         const [figmaRes, scrapeRes] = await Promise.all([
@@ -32,23 +37,21 @@ function CompareContent() {
         if (!figmaData.success && !figmaData.error?.includes("token")) {
            console.warn("Figma API error:", figmaData.error);
         }
+        if (!scrapeData.success) {
+           console.warn("Scrape API error:", scrapeData.error);
+        }
 
         const mismatches = generateReport(figmaData, scrapeData);
         setReport(mismatches);
-      } catch (e: any) {
-        setError(e.message || "An error occurred during comparison.");
+      } catch (e) {
+        setFetchError(e instanceof Error ? e.message : "An error occurred during comparison.");
       } finally {
         setIsLoading(false);
       }
     }
 
-    if (figmaUrl && liveUrl) {
-      runFidelityCheck();
-    } else {
-      setIsLoading(false);
-      setError("Missing URLs for comparison.");
-    }
-  }, [figmaUrl, liveUrl]);
+    runFidelityCheck();
+  }, [hasUrls, figmaUrl, liveUrl]);
 
   const encodedFigmaUrl = encodeURIComponent(figmaUrl);
   const figmaEmbed = `https://www.figma.com/embed?embed_host=drift&url=${encodedFigmaUrl}`;
@@ -91,7 +94,11 @@ function CompareContent() {
       <main className="flex-1 flex overflow-hidden">
         {/* Workspace Area */}
         <div className="flex-1 bg-muted/30 p-4 overflow-auto">
-          {viewMode === "side-by-side" ? (
+          {!hasUrls ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground border border-dashed border-border">
+              Provide both a Figma URL and a live URL to preview the comparison.
+            </div>
+          ) : viewMode === "side-by-side" ? (
             <div className="flex h-full gap-4">
               <div className="flex-1 border border-border bg-surface flex flex-col">
                 <div className="p-2 border-b border-border text-xs font-mono text-muted-foreground flex justify-between">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Printer } from "lucide-react";
 import Link from "next/link";
@@ -11,11 +11,7 @@ function ExportContent() {
   const searchParams = useSearchParams();
   const figmaUrl = searchParams.get("figma") || "";
   const liveUrl = searchParams.get("live") || "";
-  const [report, setReport] = useState<Mismatch[]>([]);
-
-  useEffect(() => {
-    setReport(generateReport({}, {})); 
-  }, []);
+  const [report] = useState<Mismatch[]>(() => generateReport({}, {}));
 
   const handlePrint = () => {
     window.print();

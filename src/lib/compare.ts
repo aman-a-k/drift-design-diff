@@ -7,7 +7,7 @@ export interface Mismatch {
   description: string;
 }
 
-export function generateReport(figmaData: any, domData: any): Mismatch[] {
+export function generateReport(figmaData: unknown, domData: unknown): Mismatch[] {
   // Mock comparison engine for MVP.
   // In a real scenario, this would recursively compare Figma's node tree with DOM styles.
   const mismatches: Mismatch[] = [];
