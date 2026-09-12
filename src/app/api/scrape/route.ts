@@ -21,10 +21,12 @@ export async function GET(request: Request) {
         headless: true,
       });
     } else {
-      // Use playwright-core and sparticuz for Vercel serverless deployment
+      // Use playwright-core and sparticuz for Vercel serverless deployment.
+      // @sparticuz/chromium-min ships as ESM-only ("type": "module"), so it
+      // must be loaded with a dynamic import — require() throws ERR_REQUIRE_ESM.
       const { chromium: playwrightCore } = require("playwright-core");
-      const sparticuz = require("@sparticuz/chromium-min");
-      
+      const sparticuz = (await import("@sparticuz/chromium-min")).default;
+
       const executablePath = await sparticuz.executablePath(
         "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
       );
@@ -32,7 +34,7 @@ export async function GET(request: Request) {
       browser = await playwrightCore.launch({
         args: sparticuz.args,
         executablePath: executablePath,
-        headless: sparticuz.headless,
+        headless: true,
       });
     }
     

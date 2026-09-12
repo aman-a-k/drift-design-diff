@@ -20,7 +20,11 @@ export async function GET(request: Request) {
     if (fileIndex !== -1 && pathParts.length > fileIndex + 1) {
       fileId = pathParts[fileIndex + 1];
     }
-    nodeId = urlObj.searchParams.get("node-id") || "";
+    // Figma URLs encode the node id with hyphens (e.g. "123-456"), but the
+    // REST API's `ids` param and the `nodes` response object both key on
+    // colons ("123:456") — convert so lookups below actually match.
+    const rawNodeId = urlObj.searchParams.get("node-id") || "";
+    nodeId = rawNodeId.replace(/-/g, ":");
   } catch (e) {
     return NextResponse.json({ error: "Invalid Figma URL format" }, { status: 400 });
   }
@@ -51,10 +55,14 @@ export async function GET(request: Request) {
     }
 
     const data = await res.json();
-    
+
     // For MVP, we will try to extract a flattened tree of visual properties (width, height, color, typography)
     // The engine will do the actual parsing later, just return the raw data for now.
-    
+
+    if (nodeId && !data.nodes?.[nodeId]) {
+      return NextResponse.json({ error: `Node ${nodeId} not found in Figma file` }, { status: 404 });
+    }
+
     return NextResponse.json({
       success: true,
       fileId,
